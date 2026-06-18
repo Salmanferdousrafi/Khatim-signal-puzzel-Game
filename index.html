@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+<meta name="theme-color" content="#0B0F1A"/>
+<meta name="description" content="Khatim — a signal-routing logic puzzle built on Islamic geometric pattern design. Route current through gates shaped like zellij stars to light every target."/>
+<title>KHATIM — Signal Puzzle</title>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700;900&family=Reem+Kufi:wght@400;700&display=swap');
+
+  :root {
+    /* ── ZELLIJ PALETTE ── */
+    --bg:       #0B0F1A;   /* night indigo */
+    --panel:    #10192B;   /* deeper panel */
+    --border:   #25304a;
+    --gold:     #D4AF6A;   /* antique gold — primary accent */
+    --gold-dim: #8a7142;
+    --teal:     #2E8C86;   /* zellij teal — success / source */
+    --carmine:  #B5494A;   /* muted carmine — fail */
+    --ivory:    #EDE3C8;   /* parchment text */
+    --azure:    #4A7FB5;   /* secondary accent for OR/gates */
+    --dim:      #2a3550;
+    --text:     #D8CDB4;
+    --textdim:  #6b7491;
+
+    --glow-gold:   0 0 10px #D4AF6A99, 0 0 26px #D4AF6A33;
+    --glow-teal:   0 0 10px #2E8C8699, 0 0 26px #2E8C8633;
+    --glow-carmine:0 0 10px #B5494A99, 0 0 26px #B5494A33;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── GIRIH PATTERN BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(45deg,  rgba(212,175,106,0.025) 0px, rgba(212,175,106,0.025) 1px, transparent 1px, transparent 42px),
+      repeating-linear-gradient(-45deg, rgba(212,175,106,0.025) 0px, rgba(212,175,106,0.025) 1px, transparent 1px, transparent 42px),
+      radial-gradient(circle at 50% 0%, #16203a 0%, var(--bg) 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SCREENS ── */
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity .4s, transform .4s; }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: scale(.97); }
+
+  /* ── INTRO SCREEN ── */
+  #intro {
+    background: var(--bg);
+    gap: 26px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  /* Signature: rotating eight-point star */
+  .star-mark {
+    width: 92px; height: 92px;
+    position: relative;
+    margin: 0 auto 4px;
+  }
+  .star-mark svg { width:100%; height:100%; animation: rotateStar 60s linear infinite; }
+  @keyframes rotateStar { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+  .logo-title {
+    font-family: 'Amiri', serif;
+    font-size: clamp(2.4rem, 9vw, 4.6rem);
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: var(--gold);
+    text-shadow: var(--glow-gold);
+  }
+  .logo-sub {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: clamp(.7rem, 2.4vw, .95rem);
+    color: var(--textdim);
+    letter-spacing: .38em;
+    margin-top: 4px;
+  }
+
+  .intro-desc {
+    max-width: 460px;
+    font-size: .95rem;
+    line-height: 1.8;
+    color: #9da7c4;
+    font-weight: 300;
+  }
+  .intro-desc span { color: var(--gold); font-weight: 600; }
+
+  .legend-box {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 22px;
+    max-width: 500px;
+    position: relative;
+  }
+  .legend-box::before, .legend-box::after {
+    content:'';
+    position:absolute; width:14px; height:14px;
+    border: 1.5px solid var(--gold-dim);
+    transform: rotate(45deg);
+  }
+  .legend-box::before { top:-7px; left:-7px; }
+  .legend-box::after  { bottom:-7px; right:-7px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: .8rem; font-family: 'Reem Kufi', sans-serif; letter-spacing: .04em; }
+  .legend-swatch { width: 18px; height: 18px; flex-shrink: 0; display:flex; align-items:center; justify-content:center; }
+
+  .btn-start {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    color: var(--bg);
+    background: var(--gold);
+    border: none;
+    border-radius: 2px;
+    padding: 15px 46px;
+    cursor: pointer;
+    box-shadow: var(--glow-gold);
+    transition: transform .15s, box-shadow .15s;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  .btn-start:hover { transform: scale(1.04); box-shadow: 0 0 24px var(--gold), 0 0 60px #D4AF6A44; }
+  .btn-start:active { transform: scale(.97); }
+
+  .intro-footer {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .65rem;
+    letter-spacing: .25em;
+    color: var(--textdim);
+    margin-top: 4px;
+  }
+
+  /* ── GAME SCREEN ── */
+  #game {
+    padding: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
+  /* ── HUD ── */
+  .hud {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 12px;
+    flex-wrap: wrap;
+    z-index: 5;
+  }
+  .hud-left { display: flex; align-items: center; gap: 14px; }
+  .hud-logo { font-family: 'Amiri', serif; font-size: 1rem; font-weight: 700; color: var(--gold); letter-spacing: .1em; }
+  .hud-level {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .75rem; color: var(--textdim); letter-spacing: .1em;
+  }
+  .hud-level span { color: var(--text); font-size: .95rem; font-weight:700; }
+
+  .hud-center { display: flex; gap: 22px; }
+  .stat-block { text-align: center; }
+  .stat-label { font-family: 'Reem Kufi', sans-serif; font-size: .6rem; color: var(--textdim); letter-spacing: .22em; }
+  .stat-val { font-family: 'Reem Kufi', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--gold); }
+
+  .hud-right { display: flex; gap: 10px; }
+  .hud-btn {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .72rem;
+    letter-spacing: .15em;
+    color: var(--textdim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+  }
+  .hud-btn:hover { color: var(--gold); border-color: var(--gold); }
+
+  /* ── MAIN AREA ── */
+  .game-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  /* ── SIDE PANEL ── */
+  .side-panel {
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    gap: 14px;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .62rem;
+    letter-spacing: .3em;
+    color: var(--gold-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  /* ── GATE PALETTE ── */
+  .gate-palette { display: flex; flex-direction: column; gap: 8px; }
+  .palette-gate {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: grab;
+    transition: border-color .2s, background .2s;
+    background: #0d1626;
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .76rem;
+    letter-spacing: .05em;
+  }
+  .palette-gate:hover { border-color: var(--gold); background: #16213a; }
+  .gate-icon { width: 32px; height: 24px; flex-shrink: 0; }
+
+  .objective-box {
+    background: #0e1c1a;
+    border: 1px solid #1d3530;
+    border-radius: 2px;
+    padding: 12px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: .75rem;
+    line-height: 1.7;
+    color: #6fa89f;
+    font-weight: 300;
+  }
+  .objective-box strong { color: var(--teal); display: block; margin-bottom: 6px; font-size: .65rem; letter-spacing: .25em; font-family:'Reem Kufi',sans-serif; font-weight:700; }
+
+  .hint-box {
+    background: #1c150e;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px;
+    font-size: .75rem;
+    color: var(--textdim);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .hint-box strong { color: var(--gold); display: block; margin-bottom: 4px; font-size: .65rem; letter-spacing: .25em; font-family:'Reem Kufi',sans-serif; font-weight:700; }
+
+  /* ── CANVAS AREA ── */
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  #gridCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* ── SOLVE PANEL ── */
+  .solve-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 18px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .btn-solve {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: var(--bg);
+    background: var(--teal);
+    border: none;
+    border-radius: 2px;
+    padding: 10px 32px;
+    cursor: pointer;
+    box-shadow: var(--glow-teal);
+    transition: transform .15s;
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+  .btn-solve:hover { transform: scale(1.04); }
+  .btn-clear {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .76rem;
+    letter-spacing: .12em;
+    color: var(--carmine);
+    background: transparent;
+    border: 1px solid #3a1f1f;
+    border-radius: 2px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .btn-clear:hover { border-color: var(--carmine); }
+
+  .solve-msg {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 300;
+    font-size: .8rem;
+    color: var(--textdim);
+    min-width: 180px;
+    text-align: center;
+  }
+
+  /* ── WIN / FAIL OVERLAY ── */
+  #resultOverlay {
+    position: fixed; inset: 0;
+    background: #0B0F1Acc;
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    gap: 20px;
+    transition: opacity .4s;
+  }
+  #resultOverlay.hidden { opacity: 0; pointer-events: none; }
+
+  .result-title {
+    font-family: 'Amiri', serif;
+    font-size: clamp(1.9rem, 7vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: .08em;
+  }
+  .result-title.win  { color: var(--teal); text-shadow: var(--glow-teal); }
+  .result-title.fail { color: var(--carmine); text-shadow: var(--glow-carmine); }
+
+  .result-stats {
+    display: flex; gap: 32px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 18px 32px;
+  }
+  .rs { text-align: center; }
+  .rs-label { font-family: 'Reem Kufi', sans-serif; font-size: .62rem; color: var(--textdim); letter-spacing: .25em; }
+  .rs-val { font-family: 'Reem Kufi', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--gold); }
+
+  .result-btns { display: flex; gap: 12px; }
+  .btn-next {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+    color: var(--bg);
+    background: var(--gold);
+    border: none;
+    border-radius: 2px;
+    padding: 12px 28px;
+    cursor: pointer;
+    box-shadow: var(--glow-gold);
+    transition: transform .15s;
+  }
+  .btn-next:hover { transform: scale(1.04); }
+  .btn-retry {
+    font-family: 'Reem Kufi', sans-serif;
+    font-size: .78rem;
+    letter-spacing: .12em;
+    color: var(--textdim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .btn-retry:hover { border-color: var(--gold); }
+
+  /* ── TIMER BAR ── */
+  .timer-bar-wrap {
+    width: 180px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .timer-bar { height: 100%; background: var(--gold); transition: width .5s linear, background .5s; border-radius: 2px; }
+
+  /* ── DRAG GHOST ── */
+  #dragGhost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    opacity: .85;
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    .side-panel { width: 138px; }
+    .palette-gate { padding: 6px 8px; font-size: .68rem; }
+    .gate-icon { width: 26px; height: 20px; }
+    .hud-center { gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── INTRO SCREEN ── -->
+<div class="screen" id="intro">
+
+  <div class="star-mark" aria-hidden="true">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#D4AF6A" stroke-width="1.2">
+        <polygon points="50,4 60,30 90,30 67,48 76,76 50,58 24,76 33,48 10,30 40,30" fill="none" opacity="0.9"/>
+        <polygon points="50,18 57,38 78,38 61,50 67,70 50,58 33,70 39,50 22,38 43,38" fill="#D4AF6A" opacity="0.12"/>
+        <circle cx="50" cy="50" r="46" stroke-width="0.6" opacity="0.4"/>
+      </g>
+    </svg>
+  </div>
+
+  <div>
+    <div class="logo-title">خاتم &nbsp;KHATIM</div>
+    <div class="logo-sub">SIGNAL · ROUTING · PUZZLE</div>
+  </div>
+
+  <p class="intro-desc">
+    Route <span>electrical current</span> across a grid inspired by zellij
+    star-tiling. Place <span>logic gates</span> — AND, OR, NOT, XOR — to
+    transform each signal until every star-target burns teal.
+  </p>
+
+  <div class="legend-box">
+    <div class="legend-item">
+      <div class="legend-swatch"><svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,1 10,5 14,5 11,8 12,13 8,10 4,13 5,8 2,5 6,5" fill="none" stroke="#4A7FB5" stroke-width="1.2"/></svg></div>
+      SOURCE
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,1 10,5 14,5 11,8 12,13 8,10 4,13 5,8 2,5 6,5" fill="#2E8C8633" stroke="#2E8C86" stroke-width="1.2"/></svg></div>
+      TARGET LIT
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,1 10,5 14,5 11,8 12,13 8,10 4,13 5,8 2,5 6,5" fill="#B5494A33" stroke="#B5494A" stroke-width="1.2"/></svg></div>
+      TARGET OFF
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#D4AF6A; border-radius:50%; box-shadow:0 0 6px #D4AF6A;"></div>
+      LIVE WIRE
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="border:1.5px solid #B5824F; transform:rotate(45deg); width:13px; height:13px;"></div>
+      GATE
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:repeating-linear-gradient(45deg,#1c2740,#1c2740 3px,#222e4a 3px,#222e4a 6px); width:18px; height:18px;"></div>
+      WALL
+    </div>
+  </div>
+
+  <button class="btn-start" id="btnStart">BEGIN — ابدأ</button>
+  <div class="intro-footer">6 CIRCUITS · RIGHT-CLICK TO REMOVE A GATE</div>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div class="screen hidden" id="game">
+
+  <div class="hud">
+    <div class="hud-left">
+      <span class="hud-logo">خ</span>
+      <span class="hud-level">CIRCUIT <span id="hudLevel">1</span> / 6</span>
+    </div>
+    <div class="hud-center">
+      <div class="stat-block">
+        <div class="stat-label">SCORE</div>
+        <div class="stat-val" id="hudScore">0</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">TIME</div>
+        <div class="stat-val" id="hudTime">60</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">GATES</div>
+        <div class="stat-val" id="hudGates">—</div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <button class="hud-btn" id="btnMenu">MENU</button>
+    </div>
+  </div>
+
+  <div class="game-body">
+
+    <div class="side-panel">
+      <div class="panel-title">GATE LIBRARY</div>
+      <div class="gate-palette" id="gatePalette">
+        <!-- injected by JS -->
+      </div>
+
+      <div class="panel-title" style="margin-top:8px">OBJECTIVE</div>
+      <div class="objective-box" id="objectiveBox">
+        Light all star TARGETS by routing signals through gates.
+      </div>
+
+      <div class="panel-title" style="margin-top:8px">HINT</div>
+      <div class="hint-box" id="hintBox">
+        <strong>HINT</strong>
+        Drag a gate from the library, drop it onto a wire cell to insert it.
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="gridCanvas"></canvas>
+    </div>
+
+  </div>
+
+  <div class="solve-bar">
+    <button class="btn-clear" id="btnClear">CLEAR</button>
+    <div class="timer-bar-wrap">
+      <div class="timer-bar" id="timerBar"></div>
+    </div>
+    <button class="btn-solve" id="btnSolve">RUN SIGNAL</button>
+    <div class="solve-msg" id="solveMsg">Place gates and run the signal.</div>
+  </div>
+
+</div>
+
+<!-- ── RESULT OVERLAY ── -->
+<div id="resultOverlay" class="hidden">
+  <div class="result-title" id="resultTitle">CIRCUIT SOLVED</div>
+  <div class="result-stats">
+    <div class="rs"><div class="rs-label">SCORE</div><div class="rs-val" id="resScore">0</div></div>
+    <div class="rs"><div class="rs-label">TIME</div><div class="rs-val" id="resTime">0s</div></div>
+    <div class="rs"><div class="rs-label">RANK</div><div class="rs-val" id="resEff">A</div></div>
+  </div>
+  <div class="result-btns">
+    <button class="btn-next" id="btnNext">NEXT CIRCUIT</button>
+    <button class="btn-retry" id="btnRetry">RETRY</button>
+  </div>
+</div>
+
+<!-- Drag ghost -->
+<canvas id="dragGhost" width="56" height="44"></canvas>
+
+<script>
+// ─────────────────────────────────────────────
+//  KHATIM — core engine
+// ─────────────────────────────────────────────
+
+const CELL = 52;   // grid cell size px
+
+// Cell types
+const T = { EMPTY:0, WIRE:1, SOURCE:2, TARGET:3, WALL:4, GATE:5 };
+
+// Gate types
+const G = {
+  AND:  'AND',
+  OR:   'OR',
+  NOT:  'NOT',
+  XOR:  'XOR',
+  SPLIT:'SPLIT',
+  DELAY:'DELAY',
+};
+
+const GATE_COLORS = {
+  AND:'#D4AF6A', OR:'#4A7FB5', NOT:'#B5494A', XOR:'#C98A4A', SPLIT:'#2E8C86', DELAY:'#D4AF6A'
+};
+const GATE_DESCS = {
+  AND:'Output=1 only if BOTH inputs are 1',
+  OR :'Output=1 if AT LEAST ONE input is 1',
+  NOT:'Inverts the signal (1→0, 0→1)',
+  XOR:'Output=1 if inputs DIFFER',
+  SPLIT:'Duplicates signal to all outputs',
+  DELAY:'Holds signal, use to bridge gaps',
+};
+
+// ── LEVELS ──────────────────────────────────────────────────────────────────
+function makeLevels() {
+  return [
+    {
+      title: 'FIRST LIGHT',
+      hint: 'Place a NOT gate on the wire to invert the 0-signal to 1.',
+      timeLimit: 90,
+      gates: [{type:G.NOT,count:1}],
+      grid: [
+        '. . . . . . . . .',
+        '. . . . . . . . .',
+        '. S W W W W T . .',
+        '. . . . . . . . .',
+        '. . . . . . . . .',
+      ],
+      sourceSignal: 0,
+      targetWant: 1,
+      solutionCells: [{r:2,c:4}],
+    },
+    {
+      title: 'TWIN PATHS',
+      hint: 'Both sources emit 1. AND them, then invert if needed.',
+      timeLimit: 90,
+      gates: [{type:G.AND,count:1},{type:G.NOT,count:1}],
+      grid: [
+        '. . . . . . . .',
+        '. S W W . . . .',
+        '. . . G W W T .',
+        '. S W W . . . .',
+        '. . . . . . . .',
+      ],
+      sourceSignal: 1,
+      targetWant: 1,
+      solutionCells: [{r:2,c:3}],
+    },
+    {
+      title: 'DIVERGENCE',
+      hint: 'One source is 1, one is 0. XOR gives 1 when they differ.',
+      timeLimit: 80,
+      gates: [{type:G.XOR,count:1},{type:G.OR,count:1}],
+      grid: [
+        '. . . . . . . . .',
+        '. . S W W . . . .',
+        '. . . . G W W T .',
+        '. . S W W . . . .',
+        '. . . . . . . . .',
+      ],
+      sourceSignals:[1,0],
+      targetWant: 1,
+      solutionCells:[{r:2,c:4}],
+    },
+    {
+      title: 'BRANCHING STAR',
+      hint: 'Use SPLIT to branch one signal into two paths, each reaching a target.',
+      timeLimit: 100,
+      gates:[{type:G.SPLIT,count:1},{type:G.NOT,count:2}],
+      grid: [
+        '. . . . . . . . .',
+        '. . . . W W T . .',
+        '. . S W G . . . .',
+        '. . . . W W T . .',
+        '. . . . . . . . .',
+      ],
+      sourceSignal:1,
+      targetWant:1,
+      solutionCells:[{r:2,c:4}],
+    },
+    {
+      title: 'NINE-FOLD GRID',
+      hint: 'Route 3 sources through AND + OR logic to satisfy both targets.',
+      timeLimit: 120,
+      gates:[{type:G.AND,count:1},{type:G.OR,count:1},{type:G.NOT,count:1},{type:G.XOR,count:1}],
+      grid: [
+        '. . . . . . . . . .',
+        '. S W W . . . . . .',
+        '. . . G W W . T . .',
+        '. S W W . . . . . .',
+        '. . . . G W W T . .',
+        '. S W W W . . . . .',
+        '. . . . . . . . . .',
+      ],
+      sourceSignals:[1,1,0],
+      targetWants:[1,1],
+      solutionCells:[{r:2,c:3},{r:4,c:4}],
+    },
+    {
+      title: 'THE LONG CHAIN',
+      hint: 'Chain NOT→XOR→AND across a longer wire path.',
+      timeLimit: 110,
+      gates:[{type:G.NOT,count:2},{type:G.XOR,count:1},{type:G.AND,count:1}],
+      grid: [
+        '. . . . . . . . . . .',
+        '. . . . . . . . . . .',
+        '. S W G W G W G W T .',
+        '. . . . . . . . . . .',
+        '. . . . . . . . . . .',
+      ],
+      sourceSignal: 1,
+      targetWant: 0,
+      solutionCells:[{r:2,c:3},{r:2,c:5},{r:2,c:7}],
+    },
+  ];
+}
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let levels, currentLevel, score, timeLeft, timerInterval;
+let grid, rows, cols, placedGates;
+let dragging = null;
+let canvasW, canvasH;
+let simRunning = false, solvedCells = new Set(), failedCells = new Set();
+let levelStartTime;
+
+const canvas  = document.getElementById('gridCanvas');
+const ctx     = canvas.getContext('2d');
+const ghost   = document.getElementById('dragGhost');
+const ghostCtx= ghost.getContext('2d');
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+function initGame() {
+  levels = makeLevels();
+  currentLevel = 0;
+  score = 0;
+  document.getElementById('hudScore').textContent = score;
+  loadLevel(currentLevel);
+}
+
+function loadLevel(idx) {
+  const lv = levels[idx];
+  document.getElementById('hudLevel').textContent = idx+1;
+  document.getElementById('hintBox').innerHTML = `<strong>HINT</strong>${lv.hint}`;
+  document.getElementById('objectiveBox').innerHTML =
+    `<strong>MISSION — ${lv.title}</strong>Light all TARGET stars. ${lv.gates.map(g=>`${g.count}×${g.type}`).join(', ')} gate${lv.gates.length>1?'s':''} available.`;
+
+  const raw = lv.grid;
+  rows = raw.length;
+  cols = raw[0].trim().split(/\s+/).length;
+  grid = [];
+  for (let r=0;r<rows;r++) {
+    const tokens = raw[r].trim().split(/\s+/);
+    grid[r] = [];
+    for (let c=0;c<cols;c++) {
+      const ch = tokens[c] || '.';
+      grid[r][c] = {
+        type: ch==='S'?T.SOURCE: ch==='T'?T.TARGET: ch==='W'?T.WIRE: ch==='G'?T.GATE: ch==='#'?T.WALL: T.EMPTY,
+        gate: ch==='G'?null:undefined,
+        signal: null,
+        lit: false,
+      };
+    }
+  }
+
+  placedGates = {};
+  simRunning = false;
+  solvedCells = new Set();
+  failedCells = new Set();
+
+  buildPalette(lv.gates);
+
+  timeLeft = lv.timeLimit;
+  document.getElementById('hudTime').textContent = timeLeft;
+  document.getElementById('timerBar').style.width = '100%';
+  document.getElementById('timerBar').style.background = 'var(--gold)';
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(tickTimer, 1000);
+  levelStartTime = Date.now();
+
+  updateGateHUD();
+
+  document.getElementById('solveMsg').textContent = 'Place gates and run the signal.';
+
+  resizeCanvas();
+  drawGrid();
+}
+
+function updateGateHUD() {
+  const lv = levels[currentLevel];
+  let total = lv.gates.reduce((s,g)=>s+g.count,0);
+  let used  = Object.keys(placedGates).length;
+  document.getElementById('hudGates').textContent = (total-used)+'/'+total;
+}
+
+function tickTimer() {
+  timeLeft--;
+  document.getElementById('hudTime').textContent = timeLeft;
+  const lv = levels[currentLevel];
+  const pct = timeLeft/lv.timeLimit*100;
+  document.getElementById('timerBar').style.width = pct+'%';
+  if (pct<30) document.getElementById('timerBar').style.background='var(--carmine)';
+  else if (pct<60) document.getElementById('timerBar').style.background='var(--azure)';
+  if (timeLeft<=0) {
+    clearInterval(timerInterval);
+    showResult(false);
+  }
+}
+
+// ── PALETTE ──────────────────────────────────────────────────────────────────
+let paletteGates = [];
+
+function buildPalette(gateDefs) {
+  paletteGates = gateDefs.map(g=>({type:g.type, remaining:g.count}));
+  const pal = document.getElementById('gatePalette');
+  pal.innerHTML = '';
+  paletteGates.forEach((pg, i) => {
+    const div = document.createElement('div');
+    div.className = 'palette-gate';
+    div.dataset.idx = i;
+    div.title = GATE_DESCS[pg.type];
+    div.innerHTML = `
+      <canvas class="gate-icon" width="32" height="24"></canvas>
+      <span>${pg.type} ×<span class="pg-count">${pg.remaining}</span></span>
+    `;
+    const ic = div.querySelector('canvas');
+    drawGateIcon(ic.getContext('2d'), pg.type, 32, 24, 1);
+    div.addEventListener('mousedown', e=>startDragFromPalette(e, i));
+    div.addEventListener('touchstart', e=>startDragFromPalette(e, i), {passive:false});
+    pal.appendChild(div);
+  });
+}
+
+function refreshPalette() {
+  paletteGates.forEach((pg,i)=>{
+    const span = document.querySelector(`[data-idx="${i}"] .pg-count`);
+    if (span) span.textContent = pg.remaining;
+  });
+  updateGateHUD();
+}
+
+// ── DRAG ─────────────────────────────────────────────────────────────────────
+let dragPaletteIdx = -1;
+
+function startDragFromPalette(e, idx) {
+  if (paletteGates[idx].remaining <= 0) return;
+  e.preventDefault();
+  dragPaletteIdx = idx;
+  dragging = {type: paletteGates[idx].type};
+  const pos = getEventPos(e);
+  ghost.style.display = 'block';
+  drawGateIcon(ghostCtx, dragging.type, 56, 44, 1.6);
+  moveGhost(pos.x, pos.y);
+}
+
+function moveGhost(x,y) {
+  ghost.style.left  = (x - 28)+'px';
+  ghost.style.top   = (y - 22)+'px';
+}
+
+function getEventPos(e) {
+  if (e.touches && e.touches[0]) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+  return {x:e.clientX, y:e.clientY};
+}
+
+document.addEventListener('mousemove', e=>{
+  if (!dragging) return;
+  moveGhost(e.clientX, e.clientY);
+});
+document.addEventListener('touchmove', e=>{
+  if (!dragging) return;
+  e.preventDefault();
+  moveGhost(e.touches[0].clientX, e.touches[0].clientY);
+},{passive:false});
+
+document.addEventListener('mouseup', e=>{ if(dragging) dropGate(e.clientX, e.clientY); });
+document.addEventListener('touchend', e=>{
+  if (!dragging) return;
+  const t = e.changedTouches[0];
+  dropGate(t.clientX, t.clientY);
+});
+
+function dropGate(cx, cy) {
+  ghost.style.display='none';
+  if (!dragging) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = cx - rect.left;
+  const my = cy - rect.top;
+  const c = Math.floor(mx / CELL);
+  const r = Math.floor(my / CELL);
+
+  if (r>=0&&r<rows&&c>=0&&c<cols) {
+    const cell = grid[r][c];
+    if ((cell.type===T.GATE || cell.type===T.WIRE) && !placedGates[r+','+c]) {
+      placedGates[r+','+c] = dragging.type;
+      paletteGates[dragPaletteIdx].remaining--;
+      refreshPalette();
+      simRunning = false;
+      solvedCells = new Set(); failedCells = new Set();
+      drawGrid();
+      document.getElementById('solveMsg').textContent='Gate placed. Run the signal.';
+    }
+  }
+
+  dragging = null;
+  dragPaletteIdx = -1;
+}
+
+canvas.addEventListener('contextmenu', e=>{
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const c = Math.floor((e.clientX-rect.left)/CELL);
+  const r = Math.floor((e.clientY-rect.top)/CELL);
+  const key = r+','+c;
+  if (placedGates[key]) {
+    const type = placedGates[key];
+    const pi = paletteGates.findIndex(pg=>pg.type===type);
+    if (pi>=0) paletteGates[pi].remaining++;
+    delete placedGates[key];
+    refreshPalette();
+    simRunning=false; solvedCells=new Set(); failedCells=new Set();
+    drawGrid();
+  }
+});
+
+// ── SIMULATION ───────────────────────────────────────────────────────────────
+function runSignal() {
+  const lv = levels[currentLevel];
+
+  for (let r=0;r<rows;r++)
+    for (let c=0;c<cols;c++) { grid[r][c].signal=null; grid[r][c].lit=false; }
+
+  solvedCells = new Set();
+  failedCells  = new Set();
+
+  const sources=[], targets=[];
+  for (let r=0;r<rows;r++)
+    for (let c=0;c<cols;c++) {
+      if (grid[r][c].type===T.SOURCE) sources.push({r,c});
+      if (grid[r][c].type===T.TARGET) targets.push({r,c});
+    }
+
+  sources.forEach((s,i)=>{
+    const sig = lv.sourceSignals ? lv.sourceSignals[i] : (lv.sourceSignal??1);
+    grid[s.r][s.c].signal = sig;
+  });
+
+  const visited = new Set();
+  const queue = [...sources];
+  while (queue.length) {
+    const {r,c} = queue.shift();
+    const key = r+','+c;
+    if (visited.has(key)) continue;
+    visited.add(key);
+    const sig = grid[r][c].signal;
+    if (sig===null) continue;
+
+    [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr,nc])=>{
+      if (nr<0||nr>=rows||nc<0||nc>=cols) return;
+      const ncell = grid[nr][nc];
+      if (ncell.type===T.EMPTY||ncell.type===T.WALL) return;
+      const nkey = nr+','+nc;
+      if (visited.has(nkey)) return;
+
+      let outSig = sig;
+
+      const gateType = placedGates[nkey];
+      if (gateType) {
+        const inSignals = [];
+        [[nr-1,nc],[nr+1,nc],[nr,nc-1],[nr,nc+1]].forEach(([ir,ic])=>{
+          if (ir<0||ir>=rows||ic<0||ic>=cols) return;
+          const ic2=grid[ir][ic];
+          if (ic2.signal!==null && (ir!==r||ic!==c)) inSignals.push(ic2.signal);
+        });
+        inSignals.unshift(sig);
+        outSig = applyGate(gateType, inSignals);
+      }
+
+      ncell.signal = outSig;
+      queue.push({r:nr,c:nc});
+    });
+  }
+
+  const wantMulti = lv.targetWants;
+  let allLit = true;
+  targets.forEach((t,i)=>{
+    const want = wantMulti ? wantMulti[i] : (lv.targetWant??1);
+    const got  = grid[t.r][t.c].signal;
+    if (got===want) { grid[t.r][t.c].lit=true; solvedCells.add(t.r+','+t.c); }
+    else { failedCells.add(t.r+','+t.c); allLit=false; }
+  });
+
+  simRunning = true;
+  drawGrid();
+
+  if (allLit) {
+    clearInterval(timerInterval);
+    const elapsed = Math.floor((Date.now()-levelStartTime)/1000);
+    const gateBonus = 50 * (Object.keys(placedGates).length<=lv.gates.reduce((s,g)=>s+g.count,0)/2?2:1);
+    const timeBonus = timeLeft * 4;
+    const gained = 100 + gateBonus + timeBonus;
+    score += gained;
+    document.getElementById('hudScore').textContent = score;
+    setTimeout(()=>showResult(true, elapsed), 600);
+  } else {
+    document.getElementById('solveMsg').textContent='Some targets unlit. Adjust gates.';
+  }
+}
+
+function applyGate(type, inputs) {
+  const a = inputs[0]??0;
+  const b = inputs[1]??0;
+  switch(type) {
+    case G.AND:   return (a&&b)?1:0;
+    case G.OR:    return (a||b)?1:0;
+    case G.NOT:   return a?0:1;
+    case G.XOR:   return (a!==b)?1:0;
+    case G.SPLIT: return a;
+    case G.DELAY: return a;
+    default: return a;
+  }
+}
+
+// ── DRAW ─────────────────────────────────────────────────────────────────────
+function resizeCanvas() {
+  const wrap = document.querySelector('.canvas-wrap');
+  canvasW = wrap.clientWidth;
+  canvasH = wrap.clientHeight;
+  canvas.width  = canvasW;
+  canvas.height = canvasH;
+}
+window.addEventListener('resize', ()=>{ resizeCanvas(); drawGrid(); });
+
+function drawGrid() {
+  ctx.clearRect(0,0,canvasW,canvasH);
+
+  const offX = Math.max(0, Math.floor((canvasW - cols*CELL)/2));
+  const offY = Math.max(0, Math.floor((canvasH - rows*CELL)/2));
+
+  for (let r=0;r<rows;r++) {
+    for (let c=0;c<cols;c++) {
+      const x = offX + c*CELL;
+      const y = offY + r*CELL;
+      drawCell(x, y, r, c);
+    }
+  }
+}
+
+// Draw an 8-pointed star (khatim) outline / fill at center (cx,cy) with given radius
+function drawKhatimStar(cx, cy, rOuter, rInner, strokeColor, fillColor, lineWidth, glow) {
+  ctx.beginPath();
+  for (let i=0;i<16;i++) {
+    const ang = (Math.PI/8)*i - Math.PI/2;
+    const rad = i%2===0 ? rOuter : rInner;
+    const px = cx + Math.cos(ang)*rad;
+    const py = cy + Math.sin(ang)*rad;
+    if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  if (fillColor) { ctx.fillStyle=fillColor; ctx.fill(); }
+  if (strokeColor) {
+    ctx.strokeStyle=strokeColor;
+    ctx.lineWidth=lineWidth||2;
+    if (glow) { ctx.shadowBlur=12; ctx.shadowColor=strokeColor; }
+    ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+}
+
+function drawCell(x,y,r,c) {
+  const cell = grid[r][c];
+  const key  = r+','+c;
+  const placed = placedGates[key];
+
+  const pad = 3;
+
+  switch(cell.type) {
+    case T.EMPTY: {
+      ctx.fillStyle='#0c1322';
+      ctx.fillRect(x,y,CELL,CELL);
+      ctx.fillStyle='#1c2740';
+      ctx.beginPath(); ctx.arc(x+CELL/2,y+CELL/2,1.4,0,Math.PI*2); ctx.fill();
+      break;
+    }
+    case T.WALL: {
+      ctx.fillStyle='#0e1626';
+      ctx.fillRect(x,y,CELL,CELL);
+      ctx.strokeStyle='#1c2740';
+      ctx.lineWidth=1;
+      for (let i=-CELL;i<CELL*2;i+=8) {
+        ctx.beginPath();
+        ctx.moveTo(x+i,y);
+        ctx.lineTo(x+i+CELL,y+CELL);
+        ctx.stroke();
+      }
+      break;
+    }
+    case T.WIRE: {
+      ctx.fillStyle='#0c1322';
+      ctx.fillRect(x,y,CELL,CELL);
+      if (placed) {
+        drawPlacedGate(x,y,placed, cell.signal);
+      } else {
+        const sig = cell.signal;
+        const wColor = sig===1?'#D4AF6A': sig===0?'#26314e':'#1c2740';
+        ctx.strokeStyle=wColor;
+        ctx.lineWidth = sig!==null?3:2;
+        ctx.lineCap='round';
+        ctx.beginPath();
+        const dirs=[[0,-1],[0,1],[-1,0],[1,0]];
+        const cx=x+CELL/2, cy=y+CELL/2;
+        dirs.forEach(([dr,dc])=>{
+          const nr=r+dr, nc=c+dc;
+          if(nr<0||nr>=rows||nc<0||nc>=cols)return;
+          const nt=grid[nr][nc].type;
+          if(nt===T.WIRE||nt===T.SOURCE||nt===T.TARGET||nt===T.GATE) {
+            ctx.moveTo(cx,cy);
+            ctx.lineTo(cx+dc*CELL/2, cy+dr*CELL/2);
+          }
+        });
+        ctx.stroke();
+        if(sig!==null) {
+          ctx.beginPath();
+          ctx.arc(cx,cy,4,0,Math.PI*2);
+          ctx.fillStyle= sig===1?'#D4AF6A':'#26314e';
+          if(sig===1){ctx.shadowBlur=9;ctx.shadowColor='#D4AF6A';}
+          ctx.fill();
+          ctx.shadowBlur=0;
+        }
+      }
+      break;
+    }
+    case T.GATE: {
+      ctx.fillStyle='#0c1322';
+      ctx.fillRect(x,y,CELL,CELL);
+      if (placed) {
+        drawPlacedGate(x,y,placed, cell.signal);
+      } else {
+        ctx.save();
+        ctx.translate(x+CELL/2,y+CELL/2);
+        ctx.rotate(Math.PI/4);
+        ctx.strokeStyle='#2a3550';
+        ctx.lineWidth=1;
+        ctx.setLineDash([4,4]);
+        const sz=(CELL-pad*4)/Math.SQRT2;
+        ctx.strokeRect(-sz/2,-sz/2,sz,sz);
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+      const sig=cell.signal;
+      const wColor=sig===1?'#D4AF6A':sig===0?'#26314e':'#1c2740';
+      ctx.strokeStyle=wColor; ctx.lineWidth=sig!==null?3:2; ctx.lineCap='round';
+      const cx=x+CELL/2,cy=y+CELL/2;
+      [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dr,dc])=>{
+        const nr=r+dr,nc=c+dc;
+        if(nr<0||nr>=rows||nc<0||nc>=cols)return;
+        const nt=grid[nr][nc].type;
+        if(nt===T.WIRE||nt===T.SOURCE||nt===T.TARGET||nt===T.GATE){
+          ctx.beginPath();
+          ctx.moveTo(cx,cy);
+          ctx.lineTo(cx+dc*CELL/2,cy+dr*CELL/2);
+          ctx.stroke();
+        }
+      });
+      break;
+    }
+    case T.SOURCE: {
+      const sig = cell.signal;
+      ctx.fillStyle='#0c1322';
+      ctx.fillRect(x,y,CELL,CELL);
+      const cx=x+CELL/2, cy=y+CELL/2;
+
+      drawKhatimStar(cx,cy, CELL/2-5, (CELL/2-5)*0.42, '#4A7FB5', '#4A7FB522', 2, true);
+
+      ctx.font=`bold 11px 'Reem Kufi', sans-serif`;
+      ctx.fillStyle='#4A7FB5';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('S',cx,cy-2);
+      ctx.font=`9px 'Reem Kufi', sans-serif`;
+      ctx.fillStyle='#4A7FB5aa';
+      ctx.fillText(sig!==null?sig:'?', cx, cy+13);
+
+      [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dr,dc])=>{
+        const nr=r+dr,nc=c+dc;
+        if(nr<0||nr>=rows||nc<0||nc>=cols)return;
+        const nt=grid[nr][nc].type;
+        if(nt===T.WIRE||nt===T.GATE){
+          ctx.strokeStyle='#4A7FB5'; ctx.lineWidth=2; ctx.lineCap='round';
+          ctx.beginPath();
+          ctx.moveTo(cx,cy);
+          ctx.lineTo(cx+dc*CELL/2,cy+dr*CELL/2);
+          ctx.stroke();
+        }
+      });
+      break;
+    }
+    case T.TARGET: {
+      const lit = solvedCells.has(key);
+      const fail= failedCells.has(key);
+      ctx.fillStyle='#0c1322';
+      ctx.fillRect(x,y,CELL,CELL);
+      const cx=x+CELL/2, cy=y+CELL/2;
+      const color = lit?'#2E8C86': fail?'#B5494A': '#26314e';
+      const fill  = lit?'#2E8C8622': fail?'#B5494A22':'transparent';
+
+      drawKhatimStar(cx,cy, CELL/2-5, (CELL/2-5)*0.42, color, fill, 2, lit||fail);
+
+      ctx.font=`bold 11px 'Reem Kufi', sans-serif`;
+      ctx.fillStyle=color;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('T',cx,cy-2);
+      ctx.font=`8px 'Reem Kufi', sans-serif`;
+      ctx.fillStyle=color+'aa';
+      ctx.fillText(lit?'ON':fail?'OFF':'?', cx, cy+13);
+
+      [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dr,dc])=>{
+        const nr=r+dr,nc=c+dc;
+        if(nr<0||nr>=rows||nc<0||nc>=cols)return;
+        const nt=grid[nr][nc].type;
+        if(nt===T.WIRE||nt===T.GATE){
+          ctx.strokeStyle=color; ctx.lineWidth=2;
+          ctx.beginPath();
+          ctx.moveTo(cx,cy);
+          ctx.lineTo(cx+dc*CELL/2,cy+dr*CELL/2);
+          ctx.stroke();
+        }
+      });
+      break;
+    }
+  }
+}
+
+function drawPlacedGate(x,y,type,sig) {
+  const col = GATE_COLORS[type]||'#D4AF6A';
+  const cx=x+CELL/2, cy=y+CELL/2;
+  // Diamond (rotated square) — geometric tile motif
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(Math.PI/4);
+  const sz=(CELL-12)/Math.SQRT2;
+  roundRectCentered(ctx,sz,sz,3);
+  ctx.fillStyle=col+'22';
+  ctx.fill();
+  ctx.strokeStyle=col;
+  ctx.lineWidth=1.5;
+  ctx.shadowBlur=8; ctx.shadowColor=col;
+  ctx.stroke(); ctx.shadowBlur=0;
+  ctx.restore();
+
+  ctx.font=`bold 9px 'Reem Kufi', sans-serif`;
+  ctx.fillStyle=col;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(type,cx,cy-2);
+  if(sig!==null){
+    ctx.font=`8px 'Reem Kufi', sans-serif`;
+    ctx.fillStyle= sig?'#D4AF6A':'#6b7491';
+    ctx.fillText(sig,cx,cy+11);
+  }
+}
+
+function roundRectCentered(c2d,w,h,r){
+  c2d.beginPath();
+  c2d.moveTo(-w/2+r,-h/2);
+  c2d.lineTo(w/2-r,-h/2); c2d.arcTo(w/2,-h/2,w/2,-h/2+r,r);
+  c2d.lineTo(w/2,h/2-r); c2d.arcTo(w/2,h/2,w/2-r,h/2,r);
+  c2d.lineTo(-w/2+r,h/2); c2d.arcTo(-w/2,h/2,-w/2,h/2-r,r);
+  c2d.lineTo(-w/2,-h/2+r); c2d.arcTo(-w/2,-h/2,-w/2+r,-h/2,r);
+  c2d.closePath();
+}
+
+function drawGateIcon(c2d, type, w, h, scale) {
+  c2d.clearRect(0,0,w,h);
+  const col = GATE_COLORS[type]||'#D4AF6A';
+  ctx_save_diamond(c2d, w, h, col, type, scale);
+}
+function ctx_save_diamond(c2d, w, h, col, type, scale) {
+  c2d.save();
+  c2d.translate(w/2,h/2);
+  c2d.rotate(Math.PI/4);
+  const sz = Math.min(w,h) - 4*scale;
+  roundRectCentered(c2d, sz, sz, 3*scale);
+  c2d.fillStyle=col+'22';
+  c2d.fill();
+  c2d.strokeStyle=col;
+  c2d.lineWidth=1.2;
+  c2d.shadowBlur=5; c2d.shadowColor=col;
+  c2d.stroke(); c2d.shadowBlur=0;
+  c2d.restore();
+  c2d.font=`bold ${8*scale}px 'Reem Kufi', sans-serif`;
+  c2d.fillStyle=col;
+  c2d.textAlign='center'; c2d.textBaseline='middle';
+  c2d.fillText(type,w/2,h/2);
+}
+
+// ── RESULTS ──────────────────────────────────────────────────────────────────
+function showResult(win, elapsed) {
+  const ovl = document.getElementById('resultOverlay');
+  const title = document.getElementById('resultTitle');
+  title.className = 'result-title ' + (win?'win':'fail');
+  title.textContent = win ? 'CIRCUIT SOLVED' : 'SIGNAL LOST';
+
+  document.getElementById('resScore').textContent = score;
+  document.getElementById('resTime').textContent  = (elapsed||0)+'s';
+
+  const lv = levels[currentLevel];
+  const totalGates = lv.gates.reduce((s,g)=>s+g.count,0);
+  const usedGates  = Object.keys(placedGates).length;
+  const eff = win ? (usedGates===0?'S': usedGates<=totalGates/2?'A':'B') : 'F';
+  document.getElementById('resEff').textContent = eff;
+
+  document.getElementById('btnNext').style.display = win&&currentLevel<levels.length-1?'':'none';
+  ovl.classList.remove('hidden');
+}
+
+// ── BUTTONS ──────────────────────────────────────────────────────────────────
+document.getElementById('btnStart').addEventListener('click',()=>{
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
+  initGame();
+});
+
+document.getElementById('btnSolve').addEventListener('click', runSignal);
+
+document.getElementById('btnClear').addEventListener('click',()=>{
+  Object.values(placedGates).forEach(type=>{
+    const pi=paletteGates.findIndex(pg=>pg.type===type);
+    if(pi>=0) paletteGates[pi].remaining++;
+  });
+  placedGates={};
+  simRunning=false; solvedCells=new Set(); failedCells=new Set();
+  refreshPalette();
+  drawGrid();
+  document.getElementById('solveMsg').textContent='Cleared. Place gates and run.';
+});
+
+document.getElementById('btnMenu').addEventListener('click',()=>{
+  clearInterval(timerInterval);
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('intro').classList.remove('hidden');
+  document.getElementById('resultOverlay').classList.add('hidden');
+});
+
+document.getElementById('btnNext').addEventListener('click',()=>{
+  document.getElementById('resultOverlay').classList.add('hidden');
+  currentLevel++;
+  if (currentLevel>=levels.length) {
+    document.getElementById('resultOverlay').querySelector('.result-title').textContent='ALL CIRCUITS SOLVED';
+    document.getElementById('resultOverlay').classList.remove('hidden');
+    return;
+  }
+  loadLevel(currentLevel);
+});
+
+document.getElementById('btnRetry').addEventListener('click',()=>{
+  document.getElementById('resultOverlay').classList.add('hidden');
+  loadLevel(currentLevel);
+});
+
+// ── PWA: register service worker if available ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>

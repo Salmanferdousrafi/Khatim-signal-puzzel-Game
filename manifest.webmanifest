@@ -1,0 +1,25 @@
+{
+  "name": "Khatim — Signal Puzzle",
+  "short_name": "Khatim",
+  "description": "A zellij-inspired logic gate routing puzzle. Route signals through AND, OR, NOT, and XOR gates to light every star target.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B0F1A",
+  "theme_color": "#0B0F1A",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
